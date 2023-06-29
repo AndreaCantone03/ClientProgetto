@@ -18,8 +18,26 @@ public class CustomFrame extends JFrame{
     List<Bullet> bullets = new ArrayList<Bullet>();
     InputStream bullet;
     ClassLoader cl;
+    InputStream initialImg;
+    InputStream heart;
+    InputStream rightTank;
+    InputStream leftTank;
+    BufferedImage[] imgList;
+    BufferedImage bl;
     public CustomFrame(Player thisPlayer) throws HeadlessException {
         cl = this.getClass().getClassLoader();
+        initialImg = cl.getResourceAsStream("initialIMG.png");
+        heart = cl.getResourceAsStream("Heart.png");
+        rightTank = cl.getResourceAsStream("rightTank.png");
+        leftTank = cl.getResourceAsStream("LeftTank.png");
+        bullet = cl.getResourceAsStream("Bullet.png");
+        try {
+            imgList = new BufferedImage[]{ImageIO.read(initialImg), ImageIO.read(heart), ImageIO.read(rightTank), ImageIO.read(leftTank)};
+            bl = ImageIO.read(bullet);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
         this.addKeyListener(thisPlayer);
         this.getContentPane().setBackground(Color.cyan);
     }
@@ -33,113 +51,75 @@ public class CustomFrame extends JFrame{
     }
 
     public void paint(Graphics g) {
-        super.paint(g);
+        if (imgList.length > 0) {
+            super.paint(g);
 
-        if (leftPlayer == null || rightPlayer == null) {
-            blockDrawImage(g);
-            return;
-        }
+            if (leftPlayer == null || rightPlayer == null) {
+                blockDrawImage(g);
+                return;
+            }
 
-        for (int i = 1; i <= leftPlayer.getHeart(); i++) {
-            heartDrawImage(g, 60 * i);
-        }
-        for (int i = 1; i <= rightPlayer.getHeart(); i++) {
-            heartDrawImage(g, (getWidth() - 50) - (60 * i));
-        }
+            for (int i = 1; i <= leftPlayer.getHeart(); i++) {
+                heartDrawImage(g, 60 * i);
+            }
+            for (int i = 1; i <= rightPlayer.getHeart(); i++) {
+                heartDrawImage(g, (getWidth() - 50) - (60 * i));
+            }
 
-        g.setColor(Color.yellow);
-        g.drawLine(0,87,this.getWidth(),87);
-        g.drawLine(0,88,this.getWidth(),88);
+            g.setColor(Color.yellow);
+            g.drawLine(0, 87, this.getWidth(), 87);
+            g.drawLine(0, 88, this.getWidth(), 88);
 
-        rightTankImage(g);
-        leftTankImage(g);
+            rightTankImage(g);
+            leftTankImage(g);
 
-        if(bullets.size() > 0) {
-            for (Bullet bullet: bullets) {
-                drawBullet(g, bullet.getX(), bullet.getY());
+            if (bullets.size() > 0) {
+                for (Bullet bullet : bullets) {
+                    drawBullet(g, bullet.getX(), bullet.getY());
+                }
             }
         }
     }
 
     private void blockDrawImage(Graphics g) {
-        InputStream url = cl.getResourceAsStream("initialIMG.png");
-        BufferedImage img = null;
-        try {
-            img = ImageIO.read(url);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-        g.drawImage(img, 0, 0, this.getWidth(), this.getHeight(), null);
+        g.drawImage(imgList[0], 0, 0, this.getWidth(), this.getHeight(), null);
     }
 
     private void heartDrawImage(Graphics g, int x) {
-        InputStream url = cl.getResourceAsStream("Heart.png");
-        BufferedImage img = null;
-        try {
-            img = ImageIO.read(url);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-        g.drawImage(img, x, 35, this.getWidth() / 24, this.getHeight() / 16, null);
+        g.drawImage(imgList[1], x, 35, this.getWidth() / 24, this.getHeight() / 16, null);
     }
 
     private void rightTankImage(Graphics g) {
-        InputStream url = cl.getResourceAsStream("rightTank.png");
-        BufferedImage img = null;
-        try {
-            img = ImageIO.read(url);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-        g.drawImage(img, rightPlayer.getX(), rightPlayer.getY(), 100, 100, null);
+        g.drawImage(imgList[2], rightPlayer.getX(), rightPlayer.getY(), 100, 100, null);
     }
 
     private void leftTankImage(Graphics g) {
-        InputStream url = cl.getResourceAsStream("LeftTank.png");
-        BufferedImage img = null;
-        try {
-            img = ImageIO.read(url);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-        g.drawImage(img, leftPlayer.getX(), leftPlayer.getY(), 100, 100, null);
+        g.drawImage(imgList[3], leftPlayer.getX(), leftPlayer.getY(), 100, 100, null);
     }
 
     private void drawBullet(Graphics g, int x, int y) {
-        BufferedImage img = null;
-        bullet = cl.getResourceAsStream("Bullet.png");
-        try {
-            img = ImageIO.read(bullet);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-        g.drawImage(img, x, y, 40, 40, null);
+        g.drawImage(bl, x, y, 40, 40, null);
     }
 
     public void checkBullets(Bullet b) {
         boolean presence = false;
         for (Bullet bullet: bullets) {
             if (b.getId() == bullet.getId()) {
-                System.out.println("I proiettili sono uguali");
+                bullet.setX(b.getX());
                 presence = true;
+                if (bullet.getX() <= -10 || bullet.getX() >= getWidth() + 10) {
+                    bullets.remove(bullet);
+                }
                 break;
             }
         }
         if (presence == false) {
             bullets.add(b);
-            System.out.println("Proiettile aggiunto alla lista");
         }
         if (b.getOwner().equals("leftPlayer")) {
             repaint(b.getX() - 80, b.getY(), 40, 40);
-            System.out.println("Left player exec");
         } else {
             repaint(b.getX() + 80, b.getY(), 40, 40);
-            System.out.println("Right player exec");
         }
         repaint(b.getX(), b.getY(), 40, 40);
     }
